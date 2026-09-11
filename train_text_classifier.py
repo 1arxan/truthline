@@ -44,3 +44,21 @@ print("\nBefore cleaning:")
 print(combined_df["text"].iloc[0][:200])
 print("\nAfter cleaning:")
 print(combined_df["clean_text"].iloc[0][:200])
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Split data: 80% to train the model, 20% held back to test it honestly
+X_train, X_test, y_train, y_test = train_test_split(
+    combined_df["clean_text"],
+    combined_df["label"],
+    test_size=0.2,
+    random_state=42
+)
+
+# Convert text into numbers TF-IDF can understand
+vectorizer = TfidfVectorizer(max_features=5000)
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
+
+print("\nTraining samples:", X_train_vec.shape)
+print("Testing samples:", X_test_vec.shape)
