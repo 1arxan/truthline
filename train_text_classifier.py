@@ -1,53 +1,38 @@
+import pandas as pd
+import re
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+import joblib
+
 print("SCRIPT STARTED")
 
-import pandas as pd
-
-# Load the two CSV files into pandas DataFrames (think: two spreadsheets in memory)
+# ---- Load data ----
 fake_df = pd.read_csv("data/Fake.csv")
 real_df = pd.read_csv("data/True.csv")
 
-# Peek at what's inside each one
-print("FAKE sample:")
-print(fake_df.head())
-
-print("\nREAL sample:")
-print(real_df.head())
-
-print("\nFake shape:", fake_df.shape)
-print("Real shape:", real_df.shape)
-print("\nColumns:", fake_df.columns.tolist())
-# Label each dataset: 0 = fake, 1 = real
+# ---- Label and combine ----
 fake_df["label"] = 0
 real_df["label"] = 1
 
-# Combine into a single DataFrame
 combined_df = pd.concat([fake_df, real_df], ignore_index=True)
-
-# Shuffle the rows so fake/real aren't in two separate blocks
 combined_df = combined_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 print("\nCombined shape:", combined_df.shape)
 print(combined_df["label"].value_counts())
-import re
 
+# ---- Clean text ----
 def clean_text(text):
-    text = text.lower()                          # lowercase everything
-    text = re.sub(r"http\S+|www\S+", "", text)    # remove URLs
-    text = re.sub(r"[^a-z\s]", "", text)          # remove punctuation/numbers
-    text = re.sub(r"\s+", " ", text).strip()      # collapse extra whitespace
+    text = text.lower()
+    text = re.sub(r"http\S+|www\S+", "", text)
+    text = re.sub(r"[^a-z\s]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
-# Apply cleaning to the text column
 combined_df["clean_text"] = combined_df["text"].apply(clean_text)
 
-print("\nBefore cleaning:")
-print(combined_df["text"].iloc[0][:200])
-print("\nAfter cleaning:")
-print(combined_df["clean_text"].iloc[0][:200])
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-# Split data: 80% to train the model, 20% held back to test it honestly
+# ---- Split train/test ----
 X_train, X_test, y_train, y_test = train_test_split(
     combined_df["clean_text"],
     combined_df["label"],
@@ -55,10 +40,24 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42
 )
 
-# Convert text into numbers TF-IDF can understand
+# ---- TF-IDF vectorize ----
 vectorizer = TfidfVectorizer(max_features=5000)
 X_train_vec = vectorizer.fit_transform(X_train)
 X_test_vec = vectorizer.transform(X_test)
 
 print("\nTraining samples:", X_train_vec.shape)
 print("Testing samples:", X_test_vec.shape)
+
+# ---- Train model ----
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train_vec, y_train)
+
+# ---- Evaluate ----
+predictions = model.predict(X_test_vec)
+accuracy = accuracy_score(y_test, predictions)
+print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
+
+# ---- Save model + vectorizer for Flask to use later ----
+joblib.dump(model, "text_model.pkl")
+joblib.dump(vectorizer, "text_vectorizer.pkl")
+print("\nSaved text_model.pkl and text_vectorizer.pkl")
