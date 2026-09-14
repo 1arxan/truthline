@@ -1,4 +1,4 @@
-from PIL import Image, ImageChops, ImageEnhance
+from PIL import Image, ImageChops, ImageEnhance, ExifTags
 import os
 
 print("IMAGE FORENSICS SCRIPT STARTED")
@@ -34,17 +34,43 @@ def generate_ela_image(image_path, quality=90):
 
     return diff
 
+
+def check_exif(image_path):
+    print(f"\nChecking EXIF metadata for: {image_path}")
+    image = Image.open(image_path)
+
+    exif_data = image._getexif()
+
+    if exif_data is None:
+        print("No EXIF metadata found — this is suspicious for a 'real camera photo' claim.")
+        return {"has_exif": False, "tags": {}}
+
+    readable_tags = {}
+    for tag_id, value in exif_data.items():
+        tag_name = ExifTags.TAGS.get(tag_id, tag_id)
+        readable_tags[tag_name] = value
+
+    print(f"Found {len(readable_tags)} EXIF tags")
+    important_tags = ["Make", "Model", "DateTime", "Software"]
+    for tag in important_tags:
+        print(f"  {tag}: {readable_tags.get(tag, 'MISSING')}")
+
+    return {"has_exif": True, "tags": readable_tags}
+
+
 if __name__ == "__main__":
     try:
-        image_path = "test_images/WIN_20260912_00_20_23_Pro.jpg"
-        ela_image = generate_ela_image(image_path)
+        image_path = "test_images/WIN_20260912_00_20_27_Pro.jpg"
 
+        ela_image = generate_ela_image(image_path)
         if ela_image is not None:
             output_path = "test_images/ela_output.png"
             ela_image.save(output_path)
             print(f"SUCCESS: ELA image saved to {output_path}")
         else:
-            print("Skipped saving because image failed to load.")
+            print("Skipped ELA saving because image failed to load.")
+
+        check_exif(image_path)
 
     except Exception as e:
         print("AN ERROR OCCURRED:")
