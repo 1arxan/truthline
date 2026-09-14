@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Truthline</title>
+</head>
+<body>
+    <h1>Truthline — Context Manipulation Detector</h1>
+
+    <h2>Check a Claim (Text)</h2>
+    <textarea id="textInput" rows="4" cols="50" placeholder="Paste text here..."></textarea><br>
+    <button onclick="checkText()">Check Text</button>
+    <p id="textResult"></p>
+
+    <h2>Check an Image</h2>
+    <input type="file" id="imageInput"><br>
+    <button onclick="checkImage()">Check Image</button>
+    <p id="imageResult"></p>
+
+    <script>
+        async function checkText() {
+            const text = document.getElementById("textInput").value;
+            const response = await fetch("/check-text", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: text })
+            });
+            const data = await response.json();
+            document.getElementById("textResult").innerText = JSON.stringify(data, null, 2);
+        }
+
+        async function checkImage() {
+            const fileInput = document.getElementById("imageInput");
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+
+            const response = await fetch("/check-image", {
+                method: "POST",
+                body: formData
+            });
+            const data = await response.json();
+            document.getElementById("imageResult").innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
