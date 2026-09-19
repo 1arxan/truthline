@@ -94,15 +94,26 @@ def check_image():
         max_diff = generate_ela_score(temp_path)
         exif_result = check_exif(temp_path)
 
+        # Tuned suspicion logic — missing EXIF alone is common and normal
+        # (e.g. WhatsApp/Instagram strip it), so it's weighted lightly.
+        # Actual editing software in the tag is much stronger evidence.
         suspicion_score = 0
-        if max_diff > 50:
-            suspicion_score += 50
-        if not exif_result["has_exif"]:
-            suspicion_score += 30
-        if exif_result["software"] and "photoshop" in exif_result["software"].lower():
+
+        if max_diff > 65:
+            suspicion_score += 45
+        elif max_diff > 40:
             suspicion_score += 20
 
-        trust_score = 100 - suspicion_score
+        if not exif_result["has_exif"]:
+            suspicion_score += 10
+
+        if exif_result["software"] and any(
+            tool in exif_result["software"].lower()
+            for tool in ["photoshop", "gimp", "lightroom"]
+        ):
+            suspicion_score += 35
+
+        trust_score = max(0, 100 - suspicion_score)
 
         return jsonify({
             "ela_max_difference": max_diff,

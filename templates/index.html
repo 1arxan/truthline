@@ -1,46 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Truthline</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Truthline — Case File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --bg:#0B0B0C; --paper:#F3EEDD; --yellow:#F5C400; --red:#E63946; --ink:#131313; --muted:#8A8778; --paper-muted:#5C594A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--paper); font-family:'IBM Plex Mono',monospace; overflow-x:hidden;}
+  .display{font-family:'Anton',sans-serif; text-transform:uppercase;}
+
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity 0.6s ease, transform 0.6s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+
+  .caution-bar{
+    height:26px; background:repeating-linear-gradient(135deg, var(--yellow), var(--yellow) 14px, var(--ink) 14px, var(--ink) 28px);
+  }
+
+  .case-bar{background:var(--ink); border-bottom:1px solid #2A2A2A; padding:9px 40px; display:flex; justify-content:space-between; font-size:11px; letter-spacing:0.08em; color:var(--yellow);}
+
+  nav{display:flex; justify-content:space-between; align-items:center; padding:22px 40px;}
+  .logo{display:flex; align-items:center; gap:10px; font-family:'Anton'; font-size:22px; letter-spacing:0.02em;}
+  .logo-tag{width:12px; height:12px; background:var(--red); border-radius:50%;}
+  .nav-links{display:flex; gap:30px; font-size:12px; letter-spacing:0.06em; text-transform:uppercase;}
+  .nav-links a{color:var(--paper); text-decoration:none; cursor:pointer; position:relative;}
+  .nav-links a::after{content:''; position:absolute; left:0; bottom:-4px; width:0; height:2px; background:var(--yellow); transition:width 0.25s;}
+  .nav-links a:hover::after{width:100%;}
+
+  .hero{max-width:1180px; margin:0 auto; padding:60px 40px 70px; display:grid; grid-template-columns:1.15fr 0.85fr; gap:50px; align-items:center;}
+  .file-tag{
+    display:inline-flex; align-items:center; gap:8px; background:var(--yellow); color:var(--ink); font-size:11px; font-weight:700;
+    padding:5px 12px; letter-spacing:0.06em; margin-bottom:22px; transform:rotate(-2deg);
+  }
+  .kinetic-h1{font-size:clamp(2.6rem,6vw,4.6rem); line-height:0.98; margin-bottom:22px;}
+  .kinetic-h1 span{display:inline-block; transition:color 0.15s, transform 0.15s;}
+  .kinetic-h1 span:hover{color:var(--yellow); transform:translateY(-6px) rotate(-3deg);}
+  .hero p{font-size:14px; color:#B8B5A6; line-height:1.75; max-width:440px; margin-bottom:32px;}
+
+  .hero-ctas{display:flex; gap:14px; flex-wrap:wrap;}
+  .btn{
+    font-family:'IBM Plex Mono'; font-weight:700; font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase;
+    padding:14px 26px; cursor:pointer; border:2px solid var(--paper); display:flex; align-items:center; gap:8px;
+    transition:transform 0.15s, box-shadow 0.15s, background 0.15s, color 0.15s;
+  }
+  .btn-fill{background:var(--red); border-color:var(--red); color:var(--paper);}
+  .btn-fill:hover{transform:translate(-3px,-3px); box-shadow:4px 4px 0 var(--yellow);}
+  .btn-outline{background:transparent; color:var(--paper);}
+  .btn-outline:hover{transform:translate(-3px,-3px); box-shadow:4px 4px 0 var(--paper);}
+
+  .evidence-wrap{position:relative; cursor:none;}
+  .polaroid{
+    background:var(--paper); padding:16px 16px 46px; transform:rotate(2deg); position:relative;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .tape{position:absolute; width:60px; height:20px; background:rgba(245,196,0,0.55); top:-10px; left:50%; margin-left:-30px; transform:rotate(-3deg);}
+  .polaroid-img{
+    height:190px; background:repeating-linear-gradient(60deg, #d8d2c0, #d8d2c0 6px, #c7c0aa 6px, #c7c0aa 12px); position:relative; overflow:hidden;
+  }
+  .crosshair{
+    position:absolute; width:70px; height:70px; border:1.5px solid var(--red); border-radius:50%; pointer-events:none;
+    display:none; transform:translate(-50%,-50%); transition:left 0.06s linear, top 0.06s linear;
+  }
+  .crosshair::before, .crosshair::after{content:''; position:absolute; background:var(--red);}
+  .crosshair::before{left:50%; top:-8px; width:1px; height:16px; transform:translateX(-50%);}
+  .crosshair::after{top:50%; left:-8px; height:1px; width:16px; transform:translateY(-50%);}
+  .polaroid-cap{color:var(--ink); font-size:11.5px; margin-top:12px; position:absolute; bottom:14px; left:16px; right:16px;}
+
+  section{max-width:1180px; margin:0 auto; padding:64px 40px;}
+  .section-tag{display:inline-flex; align-items:center; gap:8px; background:var(--paper); color:var(--ink); font-size:11px; font-weight:700; padding:5px 12px; letter-spacing:0.06em; margin-bottom:16px;}
+  .section-title{font-family:'Anton'; text-transform:uppercase; font-size:clamp(1.8rem,3.4vw,2.6rem); margin-bottom:40px;}
+
+  .folder{max-width:640px; margin:0 auto; position:relative;}
+  .folder-tabs{display:flex; gap:4px; margin-bottom:-2px; position:relative; z-index:2;}
+  .folder-tab{
+    padding:11px 22px; font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+    background:#DAD3BC; color:var(--ink); cursor:pointer; clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  }
+  .folder-tab.active{background:var(--paper);}
+  .folder-body{background:var(--paper); color:var(--ink); border:2px solid var(--paper); padding:32px; position:relative; z-index:1;}
+
+  .field-label{font-size:11px; color:var(--paper-muted); margin-bottom:10px; display:block;}
+  textarea{
+    width:100%; background:#fff; border:1.5px solid var(--ink); color:var(--ink); font-family:'IBM Plex Mono';
+    padding:14px; font-size:13.5px; resize:none; outline:none;
+  }
+  .drop-zone{border:1.5px dashed var(--ink); padding:40px 20px; text-align:center; cursor:pointer; background:#fff; transition:background 0.2s;}
+  .drop-zone.dragover{background:#F0E6C8;}
+  .btn-scan{
+    width:100%; margin-top:14px; padding:14px; background:var(--ink); color:var(--paper); border:none;
+    font-family:'IBM Plex Mono'; font-weight:700; font-size:12.5px; letter-spacing:0.07em; text-transform:uppercase; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:background 0.15s;
+  }
+  .btn-scan:hover{background:var(--red);}
+  .loading-row{display:none; align-items:center; gap:8px; justify-content:center; margin-top:16px; font-size:12px; color:var(--paper-muted);}
+  .spin{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #results{display:none; margin-top:30px; padding-top:24px; border-top:2px dashed var(--ink); position:relative;}
+  .string-svg{position:absolute; top:-2px; left:60px; width:120px; height:40px; overflow:visible; pointer-events:none;}
+  .string-path{fill:none; stroke:var(--red); stroke-width:2; stroke-dasharray:200; stroke-dashoffset:200;}
+  .string-path.draw{animation:drawline 0.7s ease forwards;}
+  @keyframes drawline{to{stroke-dashoffset:0;}}
+
+  .result-top{display:flex; align-items:center; gap:24px; margin-bottom:20px;}
+  .gauge-wrap{width:98px; height:98px; position:relative; flex-shrink:0;}
+  #gaugeLabel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Anton'; font-size:1.3rem;}
+
+  .verdict-tag{
+    display:inline-block; padding:7px 16px; font-family:'Anton'; letter-spacing:0.03em; font-size:1rem;
+    transform:rotateX(90deg) rotate(-4deg); transform-origin:top; opacity:0;
+    animation:flipin 0.5s ease forwards 0.3s; margin-bottom:8px; border:2px solid;
+  }
+  @keyframes flipin{to{transform:rotateX(0deg) rotate(-4deg); opacity:1;}}
+  #verdictText{font-size:13px; color:var(--paper-muted); line-height:1.65;}
+
+  .receipt-row{display:flex; justify-content:space-between; font-size:12.5px; padding:7px 0; border-bottom:1px dotted #b8b1a0;}
+  .receipt-row span:first-child{color:var(--paper-muted);}
+  .receipt-row span:last-child{font-weight:700;}
+
+  .pin-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:30px;}
+  .pin-card{
+    background:var(--paper); color:var(--ink); padding:26px 22px 22px; position:relative;
+    transform:rotate(var(--r,-2deg)); transition:transform 0.25s, box-shadow 0.25s; box-shadow:0 10px 24px rgba(0,0,0,0.35);
+  }
+  .pin-card:nth-child(2){--r:1.5deg;}
+  .pin-card:nth-child(3){--r:-1deg;}
+  .pin-card:hover{transform:rotate(0deg) translateY(-6px); box-shadow:0 18px 36px rgba(0,0,0,0.45);}
+  .pin-dot{position:absolute; top:-7px; left:50%; margin-left:-7px; width:14px; height:14px; border-radius:50%; background:var(--red); box-shadow:0 2px 4px rgba(0,0,0,0.4);}
+  .pin-num{font-family:'Anton'; font-size:1.6rem; color:var(--red); margin-bottom:8px;}
+  .pin-card h3{font-size:1rem; margin-bottom:8px;}
+  .pin-card p{font-size:12.5px; color:var(--paper-muted); line-height:1.6;}
+
+  .steps{display:flex; justify-content:space-between; gap:16px; position:relative;}
+  .steps::before{content:''; position:absolute; top:24px; left:10%; right:10%; height:1px; background:repeating-linear-gradient(90deg, var(--yellow) 0 8px, transparent 8px 16px);}
+  .step{flex:1; text-align:center; position:relative;}
+  .step-num{font-family:'Anton'; font-size:2.4rem; color:var(--yellow); margin-bottom:8px; background:var(--bg); position:relative; z-index:2;}
+  .step h4{font-size:0.95rem; margin-bottom:6px;}
+  .step p{font-size:12px; color:#9C9887;}
+
+  footer{border-top:2px solid #2A2A2A; text-align:center; padding:34px 24px; font-size:11.5px; color:#7A7768; letter-spacing:0.03em;}
+  footer a{color:var(--yellow); text-decoration:none; font-weight:600;}
+
+  @media (max-width:840px){
+    .hero{grid-template-columns:1fr; padding-top:40px;}
+    .nav-links{display:none;}
+    .pin-grid{grid-template-columns:1fr;}
+    .steps{flex-direction:column;}
+    .steps::before{display:none;}
+    .evidence-wrap{cursor:default;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+</style>
 </head>
 <body>
-    <h1>Truthline — Context Manipulation Detector</h1>
 
-    <h2>Check a Claim (Text)</h2>
-    <textarea id="textInput" rows="4" cols="50" placeholder="Paste text here..."></textarea><br>
-    <button onclick="checkText()">Check Text</button>
-    <p id="textResult"></p>
+<div class="caution-bar"></div>
+<div class="case-bar">
+  <span>CASE NO. 2026-FUSION-001</span>
+  <span id="liveDate"></span>
+  <span>STATUS: OPEN FILE</span>
+</div>
 
-    <h2>Check an Image</h2>
-    <input type="file" id="imageInput"><br>
-    <button onclick="checkImage()">Check Image</button>
-    <p id="imageResult"></p>
+<nav>
+  <div class="logo"><span class="logo-tag"></span>TRUTHLINE</div>
+  <div class="nav-links">
+    <a href="#top">Front Page</a>
+    <a onclick="goToTool('text')">Check Claim</a>
+    <a onclick="goToTool('image')">Check Image</a>
+    <a href="#features">About</a>
+  </div>
+</nav>
 
-    <script>
-        async function checkText() {
-            const text = document.getElementById("textInput").value;
-            const response = await fetch("/check-text", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: text })
-            });
-            const data = await response.json();
-            document.getElementById("textResult").innerText = JSON.stringify(data, null, 2);
-        }
+<section id="top" class="hero" style="padding-top:20px;">
+  <div>
+    <div class="file-tag reveal">⚠ EVIDENCE UNDER REVIEW</div>
+    <h1 class="kinetic-h1 display reveal" id="kineticHead"></h1>
+    <p class="reveal">Truthline cross-examines claims and images the way an investigator would — before you take the bait, before you pass it on.</p>
+    <div class="hero-ctas reveal">
+      <button class="btn btn-fill" onclick="goToTool('image')"><i data-lucide="image" style="width:15px;height:15px;"></i> Check Image</button>
+      <button class="btn btn-outline" onclick="goToTool('text')"><i data-lucide="file-text" style="width:15px;height:15px;"></i> Check Claim</button>
+    </div>
+  </div>
 
-        async function checkImage() {
-            const fileInput = document.getElementById("imageInput");
-            const formData = new FormData();
-            formData.append("image", fileInput.files[0]);
+  <div class="evidence-wrap reveal" id="evidenceWrap">
+    <div class="crosshair" id="crosshair"></div>
+    <div class="polaroid">
+      <div class="tape"></div>
+      <div class="polaroid-img"></div>
+      <div class="polaroid-cap">EXHIBIT 001 — submitted for ELA + metadata review.</div>
+    </div>
+  </div>
+</section>
 
-            const response = await fetch("/check-image", {
-                method: "POST",
-                body: formData
-            });
-            const data = await response.json();
-            document.getElementById("imageResult").innerText = JSON.stringify(data, null, 2);
-        }
-    </script>
+<section id="tool">
+  <div class="section-tag reveal">The Desk</div>
+  <h2 class="section-title reveal">Open the case file</h2>
+
+  <div class="folder reveal">
+    <div class="folder-tabs">
+      <div class="folder-tab active" id="tabTextBtn" onclick="switchTab('text')">Claim</div>
+      <div class="folder-tab" id="tabImageBtn" onclick="switchTab('image')">Image</div>
+    </div>
+    <div class="folder-body">
+      <div id="textPanel">
+        <span class="field-label">WORKS BEST ON NEWS-STYLE CLAIMS, NOT CASUAL CHAT.</span>
+        <textarea id="textInput" rows="4" placeholder="e.g. Scientists confirm new species discovered in the Amazon rainforest"></textarea>
+        <button class="btn-scan" onclick="checkText()"><i data-lucide="search" style="width:15px;height:15px;"></i> Investigate</button>
+      </div>
+
+      <div id="imagePanel" style="display:none;">
+        <label class="drop-zone" id="dropZone">
+          <i data-lucide="upload" style="width:22px;height:22px; color:var(--paper-muted);"></i>
+          <p id="dropLabel" style="color:var(--paper-muted); font-size:12.5px; margin-top:10px;">DROP EVIDENCE OR CLICK TO BROWSE</p>
+          <input type="file" id="imageInput" accept="image/*" style="display:none;">
+        </label>
+        <button class="btn-scan" onclick="checkImage()"><i data-lucide="search" style="width:15px;height:15px;"></i> Investigate</button>
+      </div>
+
+      <div class="loading-row" id="loadingRow"><i data-lucide="loader-2" class="spin" style="width:14px;height:14px;"></i> CROSS-EXAMINING...</div>
+
+      <div id="results">
+        <svg class="string-svg"><path class="string-path" id="stringPath" d="M0,4 Q40,-10 80,4 T160,4"></path></svg>
+        <div class="result-top">
+          <div class="gauge-wrap"><canvas id="gauge"></canvas><div id="gaugeLabel"></div></div>
+          <div>
+            <div class="verdict-tag" id="stampEl"></div>
+            <p id="verdictText"></p>
+          </div>
+        </div>
+        <div id="breakdown"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="section-tag reveal">Method</div>
+  <h2 class="section-title reveal">How the desk verifies</h2>
+  <div class="pin-grid">
+    <div class="pin-card reveal"><div class="pin-dot"></div><div class="pin-num">01</div><h3>Image Analysis</h3><p>Error Level Analysis re-compresses the image and maps regions edited after the original save.</p></div>
+    <div class="pin-card reveal"><div class="pin-dot"></div><div class="pin-num">02</div><h3>Metadata Check</h3><p>Camera metadata (EXIF) is read to flag images missing the trail a genuine photo usually carries.</p></div>
+    <div class="pin-card reveal"><div class="pin-dot"></div><div class="pin-num">03</div><h3>Context Verification</h3><p>A claim classifier trained on 44,898 real news articles flags patterns typical of misinformation.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-tag reveal">Process</div>
+  <h2 class="section-title reveal">Three steps to a verdict</h2>
+  <div class="steps reveal">
+    <div class="step"><div class="step-num">01</div><h4>Submit</h4><p>Paste a claim or drop an image.</p></div>
+    <div class="step"><div class="step-num">02</div><h4>Investigate</h4><p>Multiple signals run in parallel.</p></div>
+    <div class="step"><div class="step-num">03</div><h4>Verdict</h4><p>A Trust Score, fully explained.</p></div>
+  </div>
+</section>
+
+<footer>
+  BUILT BY <b style="color:var(--paper);">TEAM FUSION</b> FOR CODE FLUX 2026 · <a href="https://github.com/1arxan/truthline">GITHUB</a>
+</footer>
+
+<script>
+lucide.createIcons();
+document.getElementById('liveDate').innerText = new Date().toDateString().toUpperCase();
+
+const headline = "SEE THROUGH THE NOISE.";
+const headEl = document.getElementById('kineticHead');
+headEl.innerHTML = headline.split('').map(ch => ch === ' ' ? ' ' : `<span>${ch}</span>`).join('');
+
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, {threshold:0.12});
+revealEls.forEach(el=> io.observe(el));
+window.addEventListener('load', ()=>{
+  document.querySelectorAll('.hero .reveal').forEach((el,i)=> setTimeout(()=> el.classList.add('in'), i*130));
+});
+
+const wrap = document.getElementById('evidenceWrap');
+const crosshair = document.getElementById('crosshair');
+wrap.addEventListener('mousemove', (e)=>{
+  const rect = wrap.getBoundingClientRect();
+  crosshair.style.display = 'block';
+  crosshair.style.left = (e.clientX - rect.left) + 'px';
+  crosshair.style.top = (e.clientY - rect.top) + 'px';
+});
+wrap.addEventListener('mouseleave', ()=> crosshair.style.display = 'none');
+
+function goToTool(tab){ switchTab(tab); document.getElementById('tool').scrollIntoView({behavior:'smooth', block:'center'}); }
+
+function switchTab(tab){
+  const isText = tab==='text';
+  document.getElementById('textPanel').style.display = isText ? 'block':'none';
+  document.getElementById('imagePanel').style.display = isText ? 'none':'block';
+  document.getElementById('tabTextBtn').classList.toggle('active', isText);
+  document.getElementById('tabImageBtn').classList.toggle('active', !isText);
+  document.getElementById('results').style.display = 'none';
+}
+
+const dropZone = document.getElementById('dropZone');
+const imageInput = document.getElementById('imageInput');
+dropZone.addEventListener('click', ()=> imageInput.click());
+dropZone.addEventListener('dragover', e=>{e.preventDefault(); dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e=>{
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  imageInput.files = e.dataTransfer.files; updateDropLabel();
+});
+imageInput.addEventListener('change', updateDropLabel);
+function updateDropLabel(){ if(imageInput.files.length>0) document.getElementById('dropLabel').innerText = imageInput.files[0].name.toUpperCase(); }
+
+let gaugeChart = null;
+function showLoading(on){
+  document.getElementById('loadingRow').style.display = on ? 'flex':'none';
+  if(on) document.getElementById('results').style.display = 'none';
+}
+function renderGauge(score){
+  const color = score>=70 ? '#4A9A5C' : score>=40 ? '#F5C400' : '#E63946';
+  if(gaugeChart) gaugeChart.destroy();
+  const ctx = document.getElementById('gauge').getContext('2d');
+  gaugeChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{ datasets:[{ data:[score,100-score], backgroundColor:[color,'#DDD5C0'], borderWidth:0, cutout:'74%' }] },
+    options:{ plugins:{tooltip:{enabled:false}}, animation:{animateRotate:true, duration:800} }
+  });
+  document.getElementById('gaugeLabel').innerText = score+'%';
+}
+function renderVerdict(score){
+  const el = document.getElementById('stampEl');
+  el.style.animation='none'; void el.offsetWidth; el.style.animation=null;
+  if(score>=70){ el.innerText='CLEARED'; el.style.color='#4A9A5C'; el.style.borderColor='#4A9A5C'; }
+  else if(score>=40){ el.innerText='UNCERTAIN'; el.style.color='#B98A00'; el.style.borderColor='#B98A00'; }
+  else { el.innerText='FLAGGED'; el.style.color='#E63946'; el.style.borderColor='#E63946'; }
+  el.style.animation = 'flipin 0.5s ease forwards 0.3s';
+
+  const path = document.getElementById('stringPath');
+  path.classList.remove('draw'); void path.offsetWidth; path.classList.add('draw');
+}
+function receiptRow(label,val){ return `<div class="receipt-row"><span>${label}</span><span>${val}</span></div>`; }
+
+async function checkText(){
+  const text = document.getElementById('textInput').value.trim();
+  if(!text) return;
+  showLoading(true);
+  try{
+    const res = await fetch('/check-text', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})});
+    const data = await res.json();
+    const score = data.label==='real' ? data.confidence : 100-data.confidence;
+    showLoading(false);
+    document.getElementById('results').style.display = 'block';
+    renderGauge(Math.round(score)); renderVerdict(Math.round(score));
+    document.getElementById('verdictText').innerText =
+      `Classifier predicts "${data.label}" at ${data.confidence}% confidence — based on writing-style patterns from 44,898 training articles.`;
+    document.getElementById('breakdown').innerHTML = receiptRow('PREDICTION', data.label.toUpperCase()) + receiptRow('CONFIDENCE', data.confidence+'%');
+  }catch(e){ showLoading(false); }
+}
+
+async function checkImage(){
+  if(imageInput.files.length===0) return;
+  const fd = new FormData(); fd.append('image', imageInput.files[0]);
+  showLoading(true);
+  try{
+    const res = await fetch('/check-image', {method:'POST', body:fd});
+    const data = await res.json();
+    showLoading(false);
+    document.getElementById('results').style.display = 'block';
+    renderGauge(data.trust_score); renderVerdict(data.trust_score);
+    document.getElementById('verdictText').innerText =
+      `ELA max pixel difference: ${data.ela_max_difference}. ${data.has_exif ? 'Camera metadata present.' : 'No camera metadata found.'}`;
+    document.getElementById('breakdown').innerHTML =
+      receiptRow('ELA DIFFERENCE', data.ela_max_difference) + receiptRow('EXIF PRESENT', data.has_exif?'YES':'NO') +
+      receiptRow('SOFTWARE TAG', (data.software_tag||'NONE').toUpperCase()) + receiptRow('TRUST SCORE', data.trust_score+'%');
+  }catch(e){ showLoading(false); }
+}
+</script>
 </body>
 </html>
