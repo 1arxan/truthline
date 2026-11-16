@@ -7,8 +7,8 @@ def generate_ela_image(image_path, quality=90):
     print(f"Opening image: {image_path}")
 
     if not os.path.exists(image_path):
-        print(f"ERROR: File not found at {image_path}")
-        return None
+    print(f"ERROR: File not found at {image_path}")
+    return None
 
     original = Image.open(image_path).convert("RGB")
     print("Image opened successfully")
@@ -71,6 +71,8 @@ if __name__ == "__main__":
             print("Skipped ELA saving because image failed to load.")
 
         check_exif(image_path)
+        
+        
 
     except Exception as e:
         print("AN ERROR OCCURRED:")
